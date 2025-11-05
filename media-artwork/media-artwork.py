@@ -813,11 +813,6 @@ def _cleanup_art():
 	global _cached_art_url
 	global _cached_art_path
 
-	if _cached_art_path and os.path.isfile(_cached_art_path):
-		try:
-			os.remove(_cached_art_path)
-		except OSError:
-			pass
 	_cached_art_url = ""
 	_cached_art_path = ""
 
