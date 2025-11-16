@@ -529,7 +529,7 @@ end
 
 function script_properties()
 	local props = obs.obs_properties_create()
-	obs.obs_properties_add_text(props, "game_name", "Game Name", obs.OBS_TEXT_DEFAULT)
+	obs.obs_properties_add_text(props, "game_name", "Game", obs.OBS_TEXT_DEFAULT)
 
 	local background_list = obs.obs_properties_add_list(props, "background_source", "Background Image Source", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
 	local banner_list = obs.obs_properties_add_list(props, "banner_source", "Banner Image Source", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
@@ -538,10 +538,47 @@ function script_properties()
 	refresh_source_lists(props)
 
 	obs.obs_properties_add_button(props, "refresh_sources", "Refresh Source Lists", refresh_sources_button)
-	obs.obs_properties_add_button(props, "fetch_button", "Fetch Artwork", fetch_button_clicked)
+	obs.obs_properties_add_button(props, "fetch_button", "Fetch by name", fetch_button_clicked)
+	obs.obs_properties_add_button(props, "fetch_by_id_button", "Fetch by ID", fetch_by_id_button_clicked)
 	obs.obs_properties_add_button(props, "clear_button", "Clear Artwork", clear_button_clicked)
-
 	return props
+
+end
+
+-- Handler for the new 'Fetch by ID' button
+function fetch_by_id_button_clicked(props, prop)
+	local query = trim(current_game_name)
+	if query == "" then
+		obs.script_log(obs.LOG_WARNING, "[Steam Art] Please enter a SteamID before fetching")
+		return
+	end
+	local steamid = tonumber(query)
+	if not steamid or steamid <= 0 then
+		obs.script_log(obs.LOG_WARNING, string.format("[Steam Art] Invalid SteamID: '%s'", query))
+		return
+	end
+	set_selected_sources_visible(false)
+	local slug = sanitize_filename(query)
+	obs.script_log(obs.LOG_INFO, string.format("[Steam Art] Fetching artwork for SteamID %d", steamid))
+	local background_path = fetch_background(steamid, slug)
+	if background_path then
+		set_image_source(background_source_name, background_path)
+	else
+		obs.script_log(obs.LOG_WARNING, string.format("[Steam Art] No background image available for SteamID %d", steamid))
+	end
+	local banner_path = fetch_variant(steamid, slug, "banner", BANNER_VARIANTS)
+	if banner_path then
+		set_image_source(banner_source_name, banner_path)
+	else
+		obs.script_log(obs.LOG_WARNING, string.format("[Steam Art] No banner image available for SteamID %d", steamid))
+	end
+	local logo_path = fetch_variant(steamid, slug, "logo", LOGO_VARIANTS)
+	if logo_path then
+		set_image_source(logo_source_name, logo_path)
+	else
+		obs.script_log(obs.LOG_WARNING, string.format("[Steam Art] No logo image available for SteamID %d", steamid))
+	end
+	set_selected_sources_visible(true)
 end
 
 function script_defaults(settings)
