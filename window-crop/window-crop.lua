@@ -1,5 +1,5 @@
 -- Window Crop: crops a full screen capture to the focused window.
--- A desktop shortcut runs report_active_window.py, which writes the window
+-- A desktop shortcut runs report-window.sh, which writes the window
 -- geometry to a file this script watches. Wayland hides other windows from OBS,
 -- so the geometry has to come from the desktop.
 
