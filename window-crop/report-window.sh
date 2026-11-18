@@ -27,9 +27,9 @@ trap cleanup EXIT
 cat > "$SCRIPT_PATH" <<EOF
 const window = workspace.activeWindow;
 if (window) {
-	const frame = window.frameGeometry;
+	const content = window.clientGeometry;
 	const output = window.output.geometry;
-	print(["$TAG", frame.x, frame.y, frame.width, frame.height, output.x, output.y, output.width, output.height].join(" "));
+	print(["$TAG", content.x, content.y, content.width, content.height, output.x, output.y, output.width, output.height].join(" "));
 }
 EOF
 

@@ -11,9 +11,8 @@ local REPORT_NAME = "obs-window-crop"
 local REPORT_CHECK_INTERVAL_SECONDS = 0.1
 local SLIDE_SECONDS = 0.35
 
--- OBS alignment flags, since obslua leaves out the center value
+-- OBS alignment flag, since obslua leaves out the center value
 local ALIGN_CENTER = 0
-local ALIGN_TOP_LEFT = 1 + 4
 
 local state = {
 	sourceName = "",
@@ -120,20 +119,19 @@ local function applyCrop(filter, crop)
 	obs.obs_data_release(settings)
 end
 
--- Keeps the cropped capture filling the canvas while its size changes
-local function fitToCanvas(source)
+-- Turns the capture's current size in the scene into a box the crop fits inside,
+-- so a changing crop keeps the place and size the capture was given
+local function keepSceneBox(source, crop)
 	local sceneSource = obs.obs_frontend_get_current_scene()
 	local item = obs.obs_scene_find_source(obs.obs_scene_from_source(sceneSource), obs.obs_source_get_name(source))
-	if item ~= nil then
-		local video = obs.obs_video_info()
-		obs.obs_get_video_info(video)
+	if item ~= nil and obs.obs_sceneitem_get_bounds_type(item) == obs.OBS_BOUNDS_NONE then
+		local scale = obs.vec2()
+		obs.obs_sceneitem_get_scale(item, scale)
 		local bounds = obs.vec2()
-		bounds.x, bounds.y = video.base_width, video.base_height
+		bounds.x, bounds.y = crop.width * scale.x, crop.height * scale.y
 		obs.obs_sceneitem_set_bounds_type(item, obs.OBS_BOUNDS_SCALE_INNER)
 		obs.obs_sceneitem_set_bounds_alignment(item, ALIGN_CENTER)
-		obs.obs_sceneitem_set_alignment(item, ALIGN_TOP_LEFT)
 		obs.obs_sceneitem_set_bounds(item, bounds)
-		obs.obs_sceneitem_set_pos(item, obs.vec2())
 	end
 	obs.obs_source_release(sceneSource)
 end
@@ -149,7 +147,7 @@ local function slideTo(source, target)
 		elapsed = 0,
 	}
 	obs.obs_source_release(filter)
-	fitToCanvas(source)
+	keepSceneBox(source, state.slide.from)
 end
 
 local function stepSlide(seconds)
